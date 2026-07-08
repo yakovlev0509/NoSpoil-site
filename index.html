@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NoSpoil — Food Expiry Tracker for iPhone</title>
+<meta name="description" content="Food waste ends here. NoSpoil tracks grocery expiry dates, reminds you before food goes bad, and helps you cook what needs to be used first. Free on the App Store.">
+<meta property="og:title" content="NoSpoil — Food waste ends here">
+<meta property="og:description" content="Scan groceries, get smart expiry reminders, cook what's expiring first, and see how much money you save — in real numbers.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nospoil.skyhighapps.com">
+<meta property="og:image" content="https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/f2/84/99/f28499bf-9092-36aa-ec2d-6acc2be956fe/AppIcon-0-0-1x_U007ephone-0-1-sRGB-85-220.png/512x512bb.jpg">
+<link rel="icon" href="https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/f2/84/99/f28499bf-9092-36aa-ec2d-6acc2be956fe/AppIcon-0-0-1x_U007ephone-0-1-sRGB-85-220.png/100x100bb.jpg">
+<style>
+:root{
+  --bg:#0b0f0d;
+  --bg2:#0f1512;
+  --card:rgba(255,255,255,.045);
+  --card-border:rgba(255,255,255,.09);
+  --text:#eef4f0;
+  --muted:#9db3a7;
+  --green:#34d374;
+  --green-soft:rgba(52,211,116,.14);
+  --yellow:#f5c542;
+  --red:#f26d6d;
+  --radius:22px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;
+}
+/* background blobs */
+.blob{position:fixed;border-radius:50%;filter:blur(120px);opacity:.35;pointer-events:none;z-index:0}
+.blob1{width:520px;height:520px;background:#1a7a44;top:-160px;left:-140px}
+.blob2{width:420px;height:420px;background:#0f5f8a;top:40%;right:-180px;opacity:.22}
+.blob3{width:460px;height:460px;background:#1a7a44;bottom:-200px;left:30%;opacity:.18}
+main,header,footer{position:relative;z-index:1}
+/* floating food emoji background */
+#food-bg{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+#food-bg span{
+  position:absolute;display:block;user-select:none;
+  opacity:.07;filter:saturate(.8);
+  will-change:transform;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+section{padding:88px 0}
+h1{font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.08;font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(1.7rem,4vw,2.5rem);font-weight:800;letter-spacing:-.02em;margin-bottom:14px}
+.section-sub{color:var(--muted);max-width:620px;margin-bottom:48px;font-size:1.06rem}
+.accent{color:var(--green)}
+/* nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:50;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);background:rgba(11,15,13,.65);border-bottom:1px solid rgba(255,255,255,.06)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.05rem;text-decoration:none;color:var(--text)}
+.brand img{width:30px;height:30px;border-radius:8px}
+.nav-links{display:flex;gap:26px;align-items:center}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:.92rem;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{background:var(--green);color:#04150b!important;padding:8px 16px;border-radius:99px;font-weight:600}
+@media(max-width:720px){.nav-links a:not(.nav-cta){display:none}}
+/* hero */
+.hero{padding:150px 0 80px;display:flex;align-items:center;gap:56px}
+.hero-text{flex:1.1}
+.hero-text p.lead{color:var(--muted);font-size:1.15rem;margin:22px 0 32px;max-width:480px}
+.store-badges{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.store-badges img.asbadge{height:54px}
+.rating{color:var(--muted);font-size:.9rem}
+.rating .stars{color:var(--yellow);letter-spacing:2px}
+.hero-phone{flex:.9;display:flex;justify-content:center}
+/* iphone mockup */
+.phone{
+  width:270px;aspect-ratio:270/560;border-radius:42px;padding:10px;
+  background:linear-gradient(160deg,#2a3230,#141a17);
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.4);
+  position:relative;flex-shrink:0;
+}
+.phone::after{
+  content:"";position:absolute;top:20px;left:50%;transform:translateX(-50%);
+  width:84px;height:22px;border-radius:99px;background:#0a0d0b;z-index:2;
+}
+.phone img{width:100%;height:100%;object-fit:cover;object-position:top;border-radius:33px;display:block;background:#101512}
+.phone.small{width:220px;border-radius:36px}
+.phone.small::after{width:70px;height:18px;top:16px}
+.phone.small img{border-radius:28px}
+/* stats band */
+.stats-band{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.stat-card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:34px 28px;text-align:center;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.stat-num{font-size:2.6rem;font-weight:800;color:var(--green);letter-spacing:-.02em}
+.stat-label{color:var(--muted);font-size:.95rem;margin-top:6px}
+@media(max-width:720px){.stats-band{grid-template-columns:1fr}}
+/* feature grid */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+.card{
+  background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);
+  padding:28px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  transition:transform .3s ease,border-color .3s ease;
+}
+.card:hover{transform:translateY(-5px);border-color:rgba(52,211,116,.35)}
+.card .icon{
+  width:46px;height:46px;border-radius:13px;background:var(--green-soft);
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:16px;
+}
+.card h3{font-size:1.12rem;margin-bottom:8px;font-weight:700}
+.card p{color:var(--muted);font-size:.94rem}
+/* screenshots strip */
+.screens{display:flex;gap:26px;overflow-x:auto;padding:20px 4px 30px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+.screens::-webkit-scrollbar{height:8px}
+.screens::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:99px}
+.screen-item{scroll-snap-align:center;text-align:center}
+.screen-item .cap{color:var(--muted);font-size:.88rem;margin-top:14px}
+/* ecosystem */
+.eco{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+@media(max-width:900px){.eco{grid-template-columns:repeat(2,1fr)}}
+/* privacy band */
+.privacy{
+  background:linear-gradient(140deg,rgba(52,211,116,.10),rgba(52,211,116,.03));
+  border:1px solid rgba(52,211,116,.25);border-radius:var(--radius);
+  padding:48px 40px;text-align:center;
+}
+.privacy h2{margin-bottom:10px}
+.privacy p{color:var(--muted);max-width:640px;margin:0 auto 26px}
+.pill-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.pill{background:rgba(255,255,255,.06);border:1px solid var(--card-border);border-radius:99px;padding:8px 18px;font-size:.9rem;color:var(--text)}
+.pill b{color:var(--green)}
+/* pricing */
+.pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:stretch}
+@media(max-width:800px){.pricing{grid-template-columns:1fr;max-width:420px;margin:0 auto}}
+.price-card{position:relative;display:flex;flex-direction:column}
+.price-card .tier{font-weight:700;font-size:1.05rem}
+.price-card .amount{font-size:2.1rem;font-weight:800;margin:8px 0 2px}
+.price-card .amount span{font-size:1rem;font-weight:500;color:var(--muted)}
+.price-card .trial{color:var(--green);font-size:.88rem;margin-bottom:14px}
+.badge-best{
+  position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  background:var(--green);color:#04150b;font-size:.75rem;font-weight:700;
+  padding:4px 14px;border-radius:99px;white-space:nowrap;
+}
+.price-card.best{border-color:rgba(52,211,116,.5)}
+.free-note{color:var(--muted);text-align:center;margin-top:26px;font-size:.95rem}
+.pro-list{list-style:none;margin-top:6px}
+.pro-list li{color:var(--muted);font-size:.9rem;padding:5px 0;padding-left:24px;position:relative}
+.pro-list li::before{content:"✓";color:var(--green);position:absolute;left:0;font-weight:700}
+/* languages */
+.langs{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.langs .pill{font-size:.95rem}
+/* final cta */
+.final-cta{text-align:center}
+.final-cta .qr{width:150px;height:150px;border-radius:18px;margin:30px auto 0;display:block;border:6px solid #fff;background:#fff}
+.final-cta .qr-note{color:var(--muted);font-size:.85rem;margin-top:12px}
+/* footer */
+footer{border-top:1px solid rgba(255,255,255,.07);padding:44px 0 56px;color:var(--muted);font-size:.9rem}
+footer .wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap}
+footer a{color:var(--muted);text-decoration:none;transition:color .2s}
+footer a:hover{color:var(--text)}
+.foot-links{display:flex;gap:22px;flex-wrap:wrap}
+/* reveal animations */
+.reveal{opacity:0;transform:translateY(34px);transition:opacity .7s ease,transform .7s ease}
+.reveal.visible{opacity:1;transform:none}
+.reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}
+.reveal.d4{transition-delay:.32s}.reveal.d5{transition-delay:.4s}
+@media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+@media(max-width:820px){
+  .hero{flex-direction:column;text-align:center;padding-top:120px}
+  .hero-text p.lead{margin-left:auto;margin-right:auto}
+  .store-badges{justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<div class="blob blob1"></div><div class="blob blob2"></div><div class="blob blob3"></div>
+<div id="food-bg" aria-hidden="true"></div>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top">
+      <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/f2/84/99/f28499bf-9092-36aa-ec2d-6acc2be956fe/AppIcon-0-0-1x_U007ephone-0-1-sRGB-85-220.png/100x100bb.jpg" alt="NoSpoil icon">
+      NoSpoil
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#screens">Screens</a>
+      <a href="#pro">Pro</a>
+      <a class="nav-cta" href="https://apps.apple.com/us/app/nospoil-food-expiry-tracker/id6761074308" target="_blank" rel="noopener">Download</a>
+    </div>
+  </div>
+</nav>
+
+<main id="top">
+
+<!-- HERO -->
+<div class="wrap hero">
+  <div class="hero-text">
+    <h1 class="reveal">Food waste <span class="accent">ends here.</span></h1>
+    <p class="lead reveal d1">NoSpoil tracks what's in your kitchen, warns you before things expire, and helps you cook what needs to be used first — so food ends up on your plate, not in the bin.</p>
+    <div class="store-badges reveal d2">
+      <a href="https://apps.apple.com/us/app/nospoil-food-expiry-tracker/id6761074308" target="_blank" rel="noopener">
+        <img class="asbadge" src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" alt="Download on the App Store">
+      </a>
+      <div class="rating"><span class="stars">★★★★★</span><br>Free · iPhone</div>
+    </div>
+  </div>
+  <div class="hero-phone reveal d2">
+    <div class="phone"><img src="assets/pantry.webp" alt="NoSpoil pantry screen with expiry color coding"></div>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section>
+  <div class="wrap">
+    <h2 class="reveal">The problem is in your fridge</h2>
+    <p class="section-sub reveal d1">Most of us buy food with the best intentions — then forget about it until it's too late.</p>
+    <div class="stats-band">
+      <div class="stat-card reveal"><div class="stat-num" data-count="40" data-suffix="%">0%</div><div class="stat-label">of purchased food is thrown away by an average household</div></div>
+      <div class="stat-card reveal d1"><div class="stat-num" data-count="1500" data-prefix="$">$0</div><div class="stat-label">wasted per family every year — money straight into the trash</div></div>
+      <div class="stat-card reveal d2"><div class="stat-num" data-count="10" data-suffix=" sec">0</div><div class="stat-label">is all it takes to add a product to NoSpoil</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="wrap">
+    <h2 class="reveal">Everything your pantry needs</h2>
+    <p class="section-sub reveal d1">From the moment you unpack groceries to the moment you cook them.</p>
+    <div class="grid">
+      <div class="card reveal"><div class="icon">📷</div><h3>Scan &amp; AI recognition</h3><p>Scan barcodes for instant product lookup — or just point the camera at fruits and veggies. On-device AI recognizes food without a barcode. Batch mode scans your whole shopping haul in a row.</p></div>
+      <div class="card reveal d1"><div class="icon">⏰</div><h3>Smart expiry reminders</h3><p>Color-coded pantry and notifications 3 days before, 1 day before, and on expiry day. Nothing sneaks past you anymore.</p></div>
+      <div class="card reveal d2"><div class="icon">🍳</div><h3>Cook First</h3><p>Recipe ideas built around what's expiring soon. See how many ingredients you already have and add the missing ones to your shopping list in one tap.</p></div>
+      <div class="card reveal d3"><div class="icon">💰</div><h3>Real money impact</h3><p>Add prices and see exactly how much food and money you've saved — and wasted. Real numbers from your actual groceries, plus waste score and monthly trends.</p></div>
+      <div class="card reveal d4"><div class="icon">🛒</div><h3>Shopping list &amp; Buy Again</h3><p>Used something up? One tap adds it to the shopping list. Frequently bought products appear right in your pantry for instant re-adding.</p></div>
+      <div class="card reveal d5"><div class="icon">🥗</div><h3>Nutrition &amp; storage tips</h3><p>Calories, protein, carbs and fat for scanned products — or Nutri-Score view. Plus 50+ expert tips on storing food so it lasts longer.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SCREENS -->
+<section id="screens">
+  <div class="wrap">
+    <h2 class="reveal">See it in action</h2>
+    <p class="section-sub reveal d1">Swipe through the app →</p>
+  </div>
+  <div class="wrap">
+    <div class="screens reveal d1">
+      <div class="screen-item"><div class="phone small"><img loading="lazy" src="assets/scanner.webp" alt="Barcode scanner"></div><div class="cap">Scan anything in seconds</div></div>
+      <div class="screen-item"><div class="phone small"><img loading="lazy" src="assets/buy-again.webp" alt="Buy Again"></div><div class="cap">Buy Again — one-tap re-add</div></div>
+      <div class="screen-item"><div class="phone small"><img loading="lazy" src="assets/cook-first.webp" alt="Cook First tab"></div><div class="cap">Cook what's expiring first</div></div>
+      <div class="screen-item"><div class="phone small"><img loading="lazy" src="assets/recipe-match.webp" alt="Recipe pantry match"></div><div class="cap">Pantry match for every recipe</div></div>
+      <div class="screen-item"><div class="phone small"><img loading="lazy" src="assets/stats.webp" alt="Waste statistics"></div><div class="cap">Track your waste score</div></div>
+      <div class="screen-item"><div class="phone small"><img loading="lazy" src="assets/product-details.webp" alt="Product details with nutrition"></div><div class="cap">Nutrition at a glance</div></div>
+      <div class="screen-item"><div class="phone small"><img loading="lazy" src="assets/scan-history.webp" alt="Scan history"></div><div class="cap">Scan history &amp; quick re-add</div></div>
+      <div class="screen-item"><div class="phone small"><img loading="lazy" src="assets/widgets.webp" alt="Home screen widgets"></div><div class="cap">Widgets on your home screen</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ECOSYSTEM -->
+<section>
+  <div class="wrap">
+    <h2 class="reveal">Built for the Apple ecosystem</h2>
+    <p class="section-sub reveal d1">NoSpoil feels native because it is native — SwiftUI, through and through.</p>
+    <div class="eco">
+      <div class="card reveal"><div class="icon">📱</div><h3>Home screen widget</h3><p>What's expiring today and tomorrow — at a glance, without opening the app.</p></div>
+      <div class="card reveal d1"><div class="icon">🏝️</div><h3>Live Activities</h3><p>Expiring items on your lock screen and in the Dynamic Island.</p></div>
+      <div class="card reveal d2"><div class="icon">🎙️</div><h3>Siri shortcuts</h3><p>"Hey Siri, what's expiring in NoSpoil?" — answers by voice.</p></div>
+      <div class="card reveal d3"><div class="icon">☁️</div><h3>iCloud sync</h3><p>Pantry, shopping list and history sync across your iPhone and iPad.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRIVACY -->
+<section>
+  <div class="wrap">
+    <div class="privacy reveal">
+      <h2>Private by design</h2>
+      <p>No accounts. No ads. No tracking. AI recognition runs entirely on your device, and your data lives in your own iCloud — nowhere else.</p>
+      <div class="pill-row">
+        <div class="pill"><b>0</b> accounts required</div>
+        <div class="pill"><b>0</b> ads</div>
+        <div class="pill">AI <b>on-device</b></div>
+        <div class="pill">Data in <b>your</b> iCloud</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRO -->
+<section id="pro">
+  <div class="wrap">
+    <h2 class="reveal">Free to start. Pro when you're ready.</h2>
+    <p class="section-sub reveal d1">Track up to 10 items free, forever. NoSpoil Pro removes the limit and adds power features:</p>
+    <ul class="pro-list reveal d1" style="max-width:520px;margin-bottom:44px">
+      <li>Unlimited item tracking</li>
+      <li>Advanced waste analytics &amp; category insights</li>
+      <li>Custom categories &amp; storage locations</li>
+      <li>Custom notification schedules per category</li>
+      <li>Export shopping list to Apple Reminders</li>
+      <li>Household sharing (coming soon)</li>
+    </ul>
+    <div class="pricing">
+      <div class="card price-card reveal"><div class="tier">Weekly</div><div class="amount">$1.49<span>/week</span></div><div class="trial">3-day free trial</div></div>
+      <div class="card price-card best reveal d1"><div class="badge-best">BEST VALUE</div><div class="tier">Annual</div><div class="amount">$24.99<span>/year</span></div><div class="trial">7-day free trial · ≈ $2.08/month</div></div>
+      <div class="card price-card reveal d2"><div class="tier">Monthly</div><div class="amount">$3.99<span>/month</span></div><div class="trial">7-day free trial</div></div>
+    </div>
+    <p class="free-note">Subscriptions renew automatically and can be cancelled anytime in your Apple ID settings.</p>
+  </div>
+</section>
+
+<!-- LANGUAGES -->
+<section style="padding-top:0">
+  <div class="wrap" style="text-align:center">
+    <h2 class="reveal">Speaks your language</h2>
+    <p class="section-sub reveal d1" style="margin-left:auto;margin-right:auto">Fully localized into 9 languages.</p>
+    <div class="langs reveal d2">
+      <div class="pill">🇬🇧 English</div><div class="pill">🇧🇬 Български</div><div class="pill">🇪🇸 Español</div>
+      <div class="pill">🇫🇷 Français</div><div class="pill">🇩🇪 Deutsch</div><div class="pill">🇵🇹 Português</div>
+      <div class="pill">🇺🇦 Українська</div><div class="pill">🇵🇱 Polski</div><div class="pill">🇸🇦 العربية</div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section>
+  <div class="wrap final-cta">
+    <h2 class="reveal">Your fridge will thank you</h2>
+    <p class="section-sub reveal d1" style="margin-left:auto;margin-right:auto">Download NoSpoil free and stop paying for food you never eat.</p>
+    <div class="store-badges reveal d2" style="justify-content:center">
+      <a href="https://apps.apple.com/us/app/nospoil-food-expiry-tracker/id6761074308" target="_blank" rel="noopener">
+        <img class="asbadge" src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" alt="Download on the App Store">
+      </a>
+    </div>
+    <img class="qr reveal d3" src="assets/qr-appstore.png" alt="QR code linking to NoSpoil on the App Store">
+    <div class="qr-note reveal d3">Point your iPhone camera here</div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>© 2026 Sky High Apps · Made with 🥦 by Artem Iakovliev</div>
+    <div class="foot-links">
+      <a href="https://skyhighapps.com/nospoil-privacy-policy/" target="_blank" rel="noopener">Privacy Policy</a>
+      <a href="https://skyhighapps.com/nospoil-terms-of-use/" target="_blank" rel="noopener">Terms of Use</a>
+      <a href="https://x.com/ArtemYakovlev" target="_blank" rel="noopener">X</a>
+      <a href="https://www.threads.com/@yakovlev_aa" target="_blank" rel="noopener">Threads</a>
+      <a href="https://www.reddit.com/r/NoSpoil/" target="_blank" rel="noopener">r/NoSpoil</a>
+      <a href="https://skyhighapps.com" target="_blank" rel="noopener">Sky High Apps</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Scroll reveal
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+  });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+// Animated counters
+const cio = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    cio.unobserve(e.target);
+    const el = e.target, target = +el.dataset.count;
+    const prefix = el.dataset.prefix || '', suffix = el.dataset.suffix || '';
+    const dur = 1400, t0 = performance.now();
+    const step = now => {
+      const p = Math.min((now - t0) / dur, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = prefix + Math.round(target * eased).toLocaleString('en-US') + suffix;
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('[data-count]').forEach(el => cio.observe(el));
+
+// Floating food emoji background with parallax
+(() => {
+  const bg = document.getElementById('food-bg');
+  const EMOJI = ['🥦','🍅','🥕','🍞','🥛','🧀','🍎','🥑','🍋','🥚','🍓','🥬','🍌','🫐','🥒','🌽','🍊','🥔'];
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isMobile = matchMedia('(max-width: 720px)').matches;
+  const N = isMobile ? 14 : 24;
+  const items = [];
+  // simple seeded RNG so layout is stable per visit but random-looking
+  let seed = 42;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < N; i++) {
+    const s = document.createElement('span');
+    s.textContent = EMOJI[Math.floor(rnd() * EMOJI.length)];
+    const size = 18 + rnd() * 54;                 // 18–72px
+    s.style.fontSize = size + 'px';
+    s.style.left = (rnd() * 96) + '%';
+    const baseTop = rnd() * 110 - 5;              // in % of viewport
+    s.style.top = baseTop + '%';
+    s.style.opacity = (0.04 + rnd() * 0.05).toFixed(3); // 0.04–0.09
+    const rot = (rnd() * 50 - 25).toFixed(1);
+    s.style.transform = 'rotate(' + rot + 'deg)';
+    bg.appendChild(s);
+    // bigger emoji move faster => depth
+    items.push({ el: s, baseTop, depth: 0.04 + (size / 72) * 0.14 });
+  }
+  if (reduced) return;
+  let ticking = false;
+  const onScroll = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const shiftPct = scrollY / innerHeight * 100;
+      for (const it of items) {
+        // wrap within -8%..112% so emoji re-enter from the bottom
+        let t = (it.baseTop - shiftPct * it.depth) % 120;
+        if (t < -8) t += 120;
+        it.el.style.top = t + '%';
+      }
+      ticking = false;
+    });
+  };
+  addEventListener('scroll', onScroll, { passive: true });
+})();
+</script>
+</body>
+</html>
